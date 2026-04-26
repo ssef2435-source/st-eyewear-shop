@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>St-Eyewear-Shop</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 20px; }
+        .container { max-width: 800px; margin: auto; }
+        .product { background: white; padding: 20px; margin-bottom: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .price { color: #2ecc71; font-weight: bold; font-size: 20px; }
+        button { padding: 12px 25px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #2980b9; }
+        input, textarea { display: block; width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-family: Arial; }
+        #order-form { display: none; background: white; padding: 25px; border-radius: 10px; margin-top: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .error { color: #e74c3c; margin: 10px 0; }
+        .success { color: #2ecc71; margin: 10px 0; }
+        h1, h2 { color: #2c3e50; }
+        .back-btn { background: #95a5a6; margin-top: 10px; }
+        .back-btn:hover { background: #7f8c8d; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🕶️ St-Eyewear-Shop</h1>
+        <p>Choisissez votre produit et passez votre commande</p>
+        
+        <div id="product-list"><p>⏳ Chargement des produits...</p></div>
+        <div id="error-message" class="error"></div>
+
+        <div id="order-form">
+            <h2>📝 Finaliser la commande</h2>
+            <p id="selected-product"></p>
+            
+            <!-- النموذج القديم (FormData) -->
+            <form id="order-form-element" method="POST">
+                <input type="text" name="name" placeholder="Nom complet *" required>
+                <input type="tel" name="phone" placeholder="Numéro de téléphone *" required>
+                <input type="text" name="city" placeholder="Ville *" required>
+                <textarea name="address" placeholder="Adresse détaillée *" rows="3" required></textarea>
+                <input type="hidden" name="product" id="product-input">
+                <input type="hidden" name="email" value="Non fourni">
+                <input type="hidden" name="qty" value="1">
+                <input type="hidden" name="total" value="0">
+                
+                <button type="submit">📩 Confirmer la commande</button>
+            </form>
+            
+            <button class="back-btn" onclick="goBack()">🔙 Retour aux produits</button>
+            <div id="order-message"></div>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ REMPLACEZ CE LIEN
+        const API_URL = "https://script.google.com/macros/s/AKfycbxvFNd5357f9Pdhniukmi_GDzWVNR_1F700wV3Ed_d95088RLp5mKgydgK7vT0oVBl_/exec";
+        
+        let currentProduct = "";
+
+        function loadProducts() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", API_URL + "?action=getProducts", true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    var products = JSON.parse(xhr.responseText);
+                    if (products.length === 0) {
+                        document.getElementById("product-list").innerHTML = "<p>Aucun produit disponible.</p>";
+                        return;
+                    }
+                    var html = '';
+                    products.forEach(function(product) {
+                        html += '<div class="product">';
+                        html += '<h3>' + product[0] + '</h3>';
+                        html += '<p>' + (product[2] || '') + '</p>';
+                        html += '<p class="price">' + product[1] + ' DH</p>';
+                        html += '<button onclick="showOrderForm(\'' + product[0] + '\', \'' + product[1] + '\')">🛒 Commander</button>';
+                        html += '</div>';
+                    });
+                    document.getElementById("product-list").innerHTML = html;
+                } else {
+                    document.getElementById("error-message").innerText = "❌ Échec du chargement.";
+                }
+            };
+            xhr.onerror = function() {
+                document.getElementById("error-message").innerText = "❌ Erreur de connexion.";
+            };
+            xhr.send();
+        }
+
+        function showOrderForm(name, price) {
+            document.getElementById("product-list").style.display = "none";
+            document.getElementById("order-form").style.display = "block";
+            document.getElementById("selected-product").innerHTML = "<strong>Produit :</strong> " + name + "<br><strong>Prix :</strong> " + price + " DH";
+            document.getElementById("product-input").value = name;
+            currentProduct = name;
+        }
+
+        function goBack() {
+            document.getElementById("product-list").style.display = "block";
+            document.getElementById("order-form").style.display = "none";
+        }
+
+        // إرسال باستخدام FormData
+        document.getElementById("order-form-element").addEventListener("submit", function(e) {
+            e.preventDefault();
+            
+            var form = e.target;
+            var formData = new FormData(form);
+            
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", API_URL, true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    document.getElementById("order-message").innerHTML = '<p class="success">✅ Commande envoyée avec succès !</p>';
+                    setTimeout(goBack, 3000);
+                } else {
+                    document.getElementById("order-message").innerHTML = '<p class="error">❌ Échec de l\'envoi.</p>';
+                }
+            };
+            xhr.onerror = function() {
+                document.getElementById("order-message").innerHTML = '<p class="error">❌ Erreur de connexion.</p>';
+            };
+            xhr.send(formData);
+        });
+
+        window.onload = loadProducts;
+    </script>
+</body>
+</html>
